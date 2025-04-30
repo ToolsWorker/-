@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="ico.png" type="image/png">
+    <title>Премиум калькулятор кэшбэка</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #1a1a1a, #2d3436, #3f4c6b);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            padding: 20px;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .calculator {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 12px;
+            color: rgba(255,255,255,0.9);
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+
+        input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0,255,136,0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(45deg, #00ff88, #00ccff);
+            color: #1a1a1a;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,255,136,0.3);
+        }
+
+        .results {
+            margin-top: 40px;
+            display: none;
+        }
+
+        .result-item {
+            padding: 20px;
+            margin: 15px 0;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            transition: transform 0.3s ease;
+        }
+
+        .result-item:hover {
+            transform: translateX(10px);
+        }
+
+        .result-value {
+            font-weight: 700;
+            font-size: 1.2em;
+            color: #00ff88;
+        }
+
+        .total-max {
+            background: linear-gradient(45deg, #ff6b6b, #ffa600);
+            color: white !important;
+        }
+
+        .total-max .result-value {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h1>💎 Калькулятор для Ozon🚬 by OkieDokie Team</h1>
+        
+        <div class="input-group">
+            <label>Первоначальная сумма (руб):</label>
+            <input type="number" id="amount" placeholder="Введите сумму" step="0.01">
+        </div>
+
+        <div class="input-group">
+            <label>Процент кэшбэка (%):</label>
+            <input type="number" id="percent" placeholder="Введите процент" step="0.1">
+        </div>
+
+        <button onclick="calculateCashback()">Рассчитать</button>
+
+        <div class="results" id="results">
+            <div class="result-item">
+                <span>Сумма кэшбэка:</span>
+                <span class="result-value" id="step1">0.00 ₽</span>
+            </div>
+            
+            <div class="result-item">
+                <span>Сумма ограничения (1500):</span>
+                <span class="result-value" id="step2">0.00 ₽</span>
+            </div>
+            
+            <div class="result-item">
+                <span>1% от остатка:</span>
+                <span class="result-value" id="step5">0.00 ₽</span>
+            </div>
+            
+            <div class="result-item">
+                <span>Промежуточный итог:</span>
+                <span class="result-value" id="total">0.00 ₽</span>
+            </div>
+            
+            <div class="result-item total-max">
+                <span>Итог с лимитом (3000):</span>
+                <span class="result-value" id="totalMax">0.00 ₽</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function formatCurrency(value) {
+            // Округление в меньшую сторону до целых рублей
+            return Math.floor(value).toLocaleString('ru-RU') + ' ₽';
+        }
+    
+        function calculateCashback() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const percent = parseFloat(document.getElementById('percent').value);
+            const results = document.getElementById('results');
+    
+            if (isNaN(amount) || isNaN(percent) || amount <= 0 || percent <= 0) {
+                results.style.display = 'none';
+                alert('Введите корректные положительные значения');
+                return;
+            }
+    
+            // Расчеты (точные значения)
+            const step1 = amount * (percent / 100);
+            const step2 = Math.min(step1, 1500);
+            const step3 = (step2 * 100) / percent;
+            const step4 = amount - step3;
+            const step5 = step4 * 0.01;
+            const total = step2 + step5;
+            const totalMax = Math.min(total, 3000);
+    
+            // Обновление значений с округлением
+            document.getElementById('step1').textContent = formatCurrency(step1);
+            document.getElementById('step2').textContent = formatCurrency(step2);
+            document.getElementById('step5').textContent = formatCurrency(step5);
+            document.getElementById('total').textContent = formatCurrency(total);
+            document.getElementById('totalMax').textContent = formatCurrency(totalMax);
+            
+            results.style.display = 'block';
+        }
+    
+        // Обработка Enter
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', e => {
+                if (e.key === 'Enter') calculateCashback();
+            });
+        });
+    </script>
+</body>
+</html>
